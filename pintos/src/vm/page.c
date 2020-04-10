@@ -51,14 +51,11 @@ page_for_addr (const void *address)
       if (e != NULL)
         return hash_entry (e, struct page, hash_elem);
 
-      /* -We need to determine if the program is attempting to access the stack.
-         -First, we ensure that the address is not beyond the bounds of the stack space (1 MB in this
-          case).
-         -As long as the user is attempting to acsess an address within 32 bytes (determined by the space
-          needed for a PUSHA command) of the stack pointers, we assume that the address is valid. In that
-          case, we should allocate one more stack page accordingly.
-      */
-      if ((p.addr > PHYS_BASE - STACK_MAX) && ((void *)thread_current()->user_esp - 32 < address))
+      // Checks if the address being accessed is within the stack bounds
+      // Allocates more stack space as needed
+      int stack_bounds = PHYS_BASE - STACK_MAX;
+     
+      if (((void *)thread_current()->user_esp - 32 < address) && (p.addr > stack_bounds))
       {
         return page_allocate (p.addr, false);
       }
@@ -153,44 +150,41 @@ page_out (struct page *p)
      process to fault.  This must happen before checking the
      dirty bit, to prevent a race with the process dirtying the
      page. */
+   
   pagedir_clear_page(p->thread->pagedir, (void *) p->addr);
 
   /* Has the frame been modified? */
-  /* If the frame has been modified, set 'dirty' to true. */
+  // Calls pagedir_is_dirty to see if page frame has been modified and stores it as "dirty"
+   
   dirty = pagedir_is_dirty (p->thread->pagedir, (const void *) p->addr);
 
-  /* If the frame is not dirty (and file != NULL), we have sucsessfully evicted the page. */
+  // If dirty is false, then there's no need to swap
   if(!dirty)
   {
     ok = true;
   }
   
-  /* If the file is null, we definitely don't want to write the frame to disk. We must swap out the
-     frame and save whether or not the swap was successful. This could overwrite the previous value of
-     'ok'. */
+  // Don't write the frame to the disk if the file is NULL
   if (p->file == NULL)
   {
     ok = swap_out(p);
-  }
-  /* Otherwise, a file exists for this page. If file contents have been modified, then they must be
-     be written back to the file system on disk, or swapped out. This is determined by the private
-     variable associated with the page. */
-  else
+  } else
   {
+    // If the file exists and has been modified, we need to write it to the backing store or swap it out,
+    // depending on whether the file is marked private or not
     if (dirty)
     {
       if(p->private)
       {
         ok = swap_out(p);
-      }
-      else
+      } else
       {
         ok = file_write_at(p->file, (const void *) p->frame->base, p->file_bytes, p->file_offset);
       }
     }
   }
-
-  /* Nullify the frame held by the page. */
+   
+  // If everything is "ok" mark the page available 
   if(ok)
   {
     p->frame = NULL;

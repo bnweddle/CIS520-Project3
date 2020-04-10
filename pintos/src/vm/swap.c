@@ -73,7 +73,8 @@ swap_out (struct page *p)
 
   p->sector = slot * PAGE_SECTORS;
 
-  /*  Write out page sectors for each modified block. */
+  // Calls block_write for each of the PAGE_SECTORS
+  // where swap_device is the page or block being swapped
   for (i = 0; i < PAGE_SECTORS; i++)
   {
     block_write (swap_device, p->sector + i,

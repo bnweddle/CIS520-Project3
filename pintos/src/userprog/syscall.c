@@ -504,26 +504,28 @@ lookup_mapping (int handle)
 static void
 unmap (struct mapping *m)
 {
-  /* Remove this mapping from the list of mappings for this process. */
+  // Remove mapping from the list
   list_remove(&m->elem);
 
-  /* For each page in the memory mapped file... */
+  // Iterate through pages in mapped file
   for(int i = 0; i < m->page_cnt; i++)
   {
-    /* ...determine whether or not the page is dirty (modified). If so, write that page back out to disk. */
+    // If the page is dirty, get a lock on it, then write it to the backing store
     if (pagedir_is_dirty(thread_current()->pagedir, ((const void *) ((m->base) + (PGSIZE * i)))))
     {
       lock_acquire (&fs_lock);
       file_write_at(m->file, (const void *) (m->base + (PGSIZE * i)), (PGSIZE*(m->page_cnt)), (PGSIZE * i));
       lock_release (&fs_lock);
     }
+      page_deallocate((void *) ((m->base) + (PGSIZE * i)));
   }
-
-  /* Finally, deallocate all memory mapped pages (free up the process memory). */
+/*
+  // Iterates through the pages again and deallocates them
   for(int i = 0; i < m->page_cnt; i++)
   {
     page_deallocate((void *) ((m->base) + (PGSIZE * i)));
   }
+  */
 }
 
 /* Mmap system call. */

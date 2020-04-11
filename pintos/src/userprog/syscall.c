@@ -507,7 +507,7 @@ unmap (struct mapping *m)
   // Remove mapping from the list
   list_remove(&m->elem);
 
-  // Iterate through pages in mapped file
+  // Iterate through pages in mapped file   
   for(int i = 0; i < m->page_cnt; i++)
   {
     // If the page is dirty, get a lock on it, then write it to the backing store
@@ -517,15 +517,9 @@ unmap (struct mapping *m)
       file_write_at(m->file, (const void *) (m->base + (PGSIZE * i)), (PGSIZE*(m->page_cnt)), (PGSIZE * i));
       lock_release (&fs_lock);
     }
-      page_deallocate((void *) ((m->base) + (PGSIZE * i)));
-  }
-/*
-  // Iterates through the pages again and deallocates them
-  for(int i = 0; i < m->page_cnt; i++)
-  {
+    // Deallocates the pages
     page_deallocate((void *) ((m->base) + (PGSIZE * i)));
   }
-  */
 }
 
 /* Mmap system call. */
@@ -581,9 +575,9 @@ sys_mmap (int handle, void *addr)
 static int
 sys_munmap (int mapping)
 {
-  /* Get the map corresponding to the given map id, and attempt to unmap. */
-  struct mapping *map = lookup_mapping(mapping);
-  unmap(map);
+  // Get map by ID and call unmap on it
+  //struct mapping *map = lookup_mapping(mapping);
+  unmap(lookup_mapping(mapping));
   return 0;
 }
 

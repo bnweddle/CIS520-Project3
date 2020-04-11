@@ -576,7 +576,6 @@ static int
 sys_munmap (int mapping)
 {
   // Get map by ID and call unmap on it
-  //struct mapping *map = lookup_mapping(mapping);
   unmap(lookup_mapping(mapping));
   return 0;
 }

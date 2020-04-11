@@ -1,0 +1,147 @@
+﻿+-------------------------------------+
+          |                 CIS 520                  |
+          | PROJECT 3: Virtual Memory |
+          |     DESIGN DOCUMENT       |
+          +--------------------------------------+
+---- GROUP ----
+>> Fill in the names of your group members.
+
+
+Bethany Weddle
+Benjamin Cooper
+Mir Anwar
+
+
+---- PRELIMINARIES ----
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+
+https://github.com/hjjoh1208/pintOS-Final-Projects/tree/master/pintos_project3/src
+https://web.stanford.edu/class/cs140/projects/pintos/pintos_4.html
+https://github.com/ChristianJHughes/pintos-project3/tree/master/pintos3/src
+http://courses.cs.vt.edu/~cs3204/spring2009/pintos-vt-local/Project3Session.pdf
+http://bits.usc.edu/cs350/assignments/project3.pdf
+https://stackoverflow.com/questions/34206005/what-check-to-make-in-exec-missing-in-pintos
+
+
+
+
+PAGE TABLE MANAGEMENT
+=====================
+---- ALGORITHMS ----
+
+
+>> A1: In a few paragraphs, describe the existing code for locating the
+>> frame, if any, that contains the data of a given page.
+
+
+The function frame_alloc_and_lock() tries to find a free frame through multiple attempts to secure a free region of memory. Although, If no free frame exists, then it finds an existing frame to evict for the new frame. After finding the frame it is evicted and the new frame is created and returned. If still no existing frame could be found, NULL would be returned.
+
+
+---- SYNCHRONIZATION ----
+
+
+>> A2: When two user processes both need a new frame at the same time,
+>> how are races avoided?
+
+
+Each process is limited to run one at a time with the lock scan_lock, so no two processes can race against each other for the new frame. Each frame has its own lock which is set by the frame_lock, frame_free, and frame_unlock.
+
+
+  PAGING TO AND FROM DISK
+  =======================
+---- ALGORITHMS ----
+
+
+>> B1: When a frame is required but none is free, some frame must be
+>> evicted.  Describe the algorithm used to choose a frame to evict.
+
+
+The algorithm used to choose a frame to evict is “try_frame_alloc_and_lock” which is located in “frame.c”. If there’s no page association, we grab the frame. If there is, we grab a frame which hasn’t been accessed recently. On the chance that they’ve all been accessed recently, we iterate over them again. The reason for this is because “page_accessed_recently” changes the frame’s access status when it’s called. If there’s still no frames, a value of NULL is returned.
+
+
+>> B2: Explain your heuristic for deciding whether a page fault for an
+>> invalid virtual address should cause the stack to be extended into
+>> the page that faulted.
+
+
+We check if the rounded result of the page address is in the stack space. Next, we use the unrounded page address and see if it’s within 32 bytes of “user_esp.” This accounts for any commands that manage stack memory.
+
+
+MEMORY MAPPED FILES
+===================
+---- DATA STRUCTURES ----
+>> C1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+
+N/A
+
+
+---- ALGORITHMS ----
+>> C2: Describe how memory mapped files integrate into your virtual
+>> memory subsystem.  Explain how the page fault and eviction
+>> processes differ between swap pages and other pages.
+
+
+Memory mapped files are integrated into our virtual memory subsystem by first being put in the “mapping” struct located in “syscall.c”. Every mapping has a reference to a memory address and its mapped file. Next, each thread has a list of all the mapped files. These can help manage files in memory. The page fault and eviction processes differ between swap pages and others pages because non-file pages are moved to a swap partition when evicted, even if the page is dirty. Once evicted, file pages that are memory mapped should only be written back to the modified file. Otherwise the swap partition is avoided. 
+
+
+>> C3: Explain how you determine whether a new file mapping overlaps
+>> any existing segment.
+
+
+We determine whether a new file mapping overlaps any existing segment by using “page_allocated”. This function can see all the existing mappings and won’t allocate space anywhere space is already taken.
+
+
+---- RATIONALE ----
+>> C4: Mappings created with "mmap" have similar semantics to those of
+>> data demand-paged from executables, except that "mmap" mappings are
+>> written back to their original files, not to swap.  This implies
+>> that much of their implementation can be shared.  Explain why your
+>> implementation either does or does not share much of the code for
+>> the two situations.
+
+
+Our implementation does share much of the code for the two situations. The reason for this is because pages will be paged out with “page_out” in “page.c.” The main distinction is checking to see whether a page should be written to the disk or not. If a page is private, then it’s swapped to a swap partition. If it’s not, it’s written to the file on the disk. 
+
+
+  SURVEY QUESTIONS
+  ==================
+
+
+Answering these questions is optional, but it will help us improve the
+course in future quarters.  Feel free to tell us anything you
+want--these questions are just to spur your thoughts.  You may also
+choose to respond anonymously in the course evaluations at the end of
+the quarter.
+
+
+>> In your opinion, was this assignment, or any one of the three problems
+>> in it, too easy or too hard?  Did it take too long or too little time?
+It would have been nice if Project 2 was condensed and put into Project 3 to even out their difficulties 
+
+
+>> Did you find that working on a particular part of the assignment gave
+>> you have greater insight into some aspects of OS design?
+Yes.
+
+
+>> Is there some particular fact or hint we should give students in
+>> future quarters to help them solve the problems?  Conversely, did you
+>> find any of our guidance to be misleading?
+This project was pretty fair overall and we didn’t need much guidance.
+
+
+>> Do you have any suggestions for the TAs to more effectively assist
+>> students, either for future quarters or the remaining projects?
+No, we didn’t utilize TA help.
+
+
+>> Any other comments?
+No.
